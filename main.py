@@ -261,7 +261,7 @@ with tab1:
     inputs = {}
     cols = st.columns(3)
     
-    names = ["Country A (Mercantilist/High Malinvestment)", "Country B (Mercantilist/Low Malinvestment)", "Country C (Open Capital / Sponge)"]
+    names = ["Country A (Mercantilist/High Malinvestment eg. China)", "Country B (Mercantilist/Low Malinvestment eg. Germany)", "Country C (Open Capital / Sponge eg. US)"]
     short_names = ["Country A", "Country B", "Country C"]
     
     help_texts = {
