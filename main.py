@@ -3,9 +3,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Pettis Class-Warfare Model v6.8", layout="wide")
+st.set_page_config(page_title="Pettis Class-Warfare Model v6.9", layout="wide")
 
-st.title("Trade Wars Are Class Wars: Geopolitical Simulator (v6.8)")
+st.title("Trade Wars Are Class Wars: Geopolitical Simulator (v6.9)")
 st.markdown("""
 This master version models global macroeconomics as an institutional class conflict. 
 Track the division of wealth between asset owners and workers, watch distinct debt categories accumulate over a 10-year loop, 
@@ -19,6 +19,34 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🏦 Currency & The Exorbitant Burden",
     "📖 Advanced Theoretical Manual"
 ])
+
+# =========================================================================
+# GLOBAL PRESETS & RESET FUNCTION VIA SESSION STATE
+# =========================================================================
+default_presets = [
+    {"gdp": 1000, "wage": 42, "repr": 8, "curr": 20, "safe": 75, "inv": 46, "mal": 48, "prod": 0.35},
+    {"gdp": 800,  "wage": 52, "repr": 1, "curr": 12, "safe": 25, "inv": 22, "mal": 8, "prod": 0.35},
+    {"gdp": 1600, "wage": 66, "repr": 0, "curr": 0, "safe": 35, "inv": 18, "mal": 5, "prod": 0.40}
+]
+
+def reset_all_sliders():
+    """Directly mutates session state keys to restore baseline presets."""
+    for idx, preset in enumerate(default_presets):
+        st.session_state[f"d_gdp_{idx}"] = preset["gdp"]
+        st.session_state[f"d_wage_{idx}"] = preset["wage"]
+        st.session_state[f"d_repr_{idx}"] = preset["repr"]
+        st.session_state[f"d_curr_{idx}"] = preset["curr"]
+        st.session_state[f"d_safe_{idx}"] = preset["safe"]
+        st.session_state[f"d_inv_{idx}"] = preset["inv"]
+        st.session_state[f"d_mal_{idx}"] = preset["mal"]
+        st.session_state[f"d_prod_{idx}"] = preset["prod"]
+    
+    st.session_state["c_alloc_treasuries"] = 40
+    st.session_state["c_alloc_real_estate"] = 30
+    st.session_state["c_alloc_equities"] = 30
+    st.session_state["c_fx_elasticity"] = 20.0
+    st.session_state["c_deindustrialization_beta"] = 1.5
+    st.session_state["c_policy_year_5"] = "None"
 
 # =========================================================================
 # GLOBAL ENGINE FUNCTION
@@ -226,14 +254,13 @@ def run_10_year_simulation(inputs):
 with tab1:
     st.header("Configure Structural Distortions & Policies")
     
+    # NEW PIECE: The Global Master Reset Interlock
+    st.button("🔄 Reset All Sliders to Default System Settings", on_click=reset_all_sliders)
+    st.divider()
+
     inputs = {}
     cols = st.columns(3)
     
-    default_presets = [
-        {"gdp": 1000, "wage": 42, "repr": 8, "curr": 20, "safe": 75, "inv": 46, "mal": 48, "prod": 0.35},
-        {"gdp": 800,  "wage": 52, "repr": 1, "curr": 12, "safe": 25, "inv": 22, "mal": 8, "prod": 0.35},
-        {"gdp": 1600, "wage": 66, "repr": 0, "curr": 0, "safe": 35, "inv": 18, "mal": 5, "prod": 0.40}
-    ]
     names = ["Country A (Mercantilist/High Malinvestment)", "Country B (Mercantilist/Low Malinvestment)", "Country C (Open Capital / Sponge)"]
     short_names = ["Country A", "Country B", "Country C"]
     
@@ -267,9 +294,7 @@ with tab1:
                 "init_gdp": init_gdp, "base_wage": base_wage, "repression": repression,
                 "currency_under": currency_under, "safety_net": safety_net, "nom_inv": nom_inv,
                 "malinvestment": malinvestment, "prod_coef": prod_coef,
-                "alloc_treasuries": 40 if c_key == "Country C" else 0, 
-                "alloc_real_estate": 30 if c_key == "Country C" else 0, 
-                "alloc_equities": 30 if c_key == "Country C" else 0,
+                "alloc_treasuries": 0, "alloc_real_estate": 0, "alloc_equities": 0,
                 "fx_elasticity": 20.0, "deindustrialization_beta": 1.5, "policy_year_5": "None"
             }
 
@@ -287,14 +312,14 @@ with tab1:
     
     f_col1, f_col2, f_col3, f_col4 = st.columns(4)
     with f_col1:
-        inputs["Country C"]["alloc_treasuries"] = st.slider("Flow to Treasuries", 0, 100, 40, help=help_fx["treasuries"])
+        inputs["Country C"]["alloc_treasuries"] = st.slider("Flow to Treasuries", 0, 100, 40, help=help_fx["treasuries"], key="c_alloc_treasuries")
     with f_col2:
-        inputs["Country C"]["alloc_real_estate"] = st.slider("Flow to Real Estate", 0, 100, 30, help=help_fx["real_estate"])
+        inputs["Country C"]["alloc_real_estate"] = st.slider("Flow to Real Estate", 0, 100, 30, help=help_fx["real_estate"], key="c_alloc_real_estate")
     with f_col3:
-        inputs["Country C"]["alloc_equities"] = st.slider("Flow to Equities", 0, 100, 30, help=help_fx["equities"])
+        inputs["Country C"]["alloc_equities"] = st.slider("Flow to Equities", 0, 100, 30, help=help_fx["equities"], key="c_alloc_equities")
     with f_col4:
-        inputs["Country C"]["fx_elasticity"] = st.slider("Currency Flow Elasticity (Gamma)", 0.0, 50.0, 20.0, help=help_fx["gamma"])
-        inputs["Country C"]["deindustrialization_beta"] = st.slider("Deindustrialization Drag (Beta)", 0.0, 5.0, 1.5, help=help_fx["beta"])
+        inputs["Country C"]["fx_elasticity"] = st.slider("Currency Flow Elasticity (Gamma)", 0.0, 50.0, 20.0, help=help_fx["gamma"], key="c_fx_elasticity")
+        inputs["Country C"]["deindustrialization_beta"] = st.slider("Deindustrialization Drag (Beta)", 0.0, 5.0, 1.5, help=help_fx["beta"], key="c_deindustrialization_beta")
 
     st.divider()
     st.subheader("🛡️ Policy Intervention Dashboard (Activates in Year 5)")
@@ -302,7 +327,8 @@ with tab1:
         "Select Country C's Year 5 Strategic Choice:",
         ["None", "Tariffs on Country A", "Capital Controls"],
         horizontal=True,
-        help="None allows imbalances to compound. Tariffs impose taxes on imports without altering capital flows. Capital Controls close the capital account to reject foreign savings gluts."
+        help="None allows imbalances to compound. Tariffs impose taxes on imports without altering capital flows. Capital Controls close the capital account to reject foreign savings gluts.",
+        key="c_policy_year_5"
     )
 
     df_sim = run_10_year_simulation(inputs)
@@ -484,14 +510,13 @@ with tab4:
     with st.expander("Scenario 6: The Global Golden Equilibrium (Total Debt Eradication)"):
         st.markdown("""
         * **Setup:** Configure **Country A** and **Country B** into perfect, non-distortionary consumer economies: Set `Base Wage Share` = **75%**, drop `Financial Repression`, `Currency Undervaluation`, and `Social Safety Net Deficit` to **0%**, set `Malinvestment Rate` to **0%**, and carefully align `Nominal Investment Rate` to exactly **28%**. Finally, give all nations high technology baselines (`Capital Productivity` = **0.60**).
-        * **The Mechanic:** 
-            1. **Eliminating the 4% Leak:** Elevating the wage share to 75% under a zero welfare deficit means households spend 96% of their disposable earnings. This fixes Country A and B's aggregate domestic consumption at 72% of GDP ($75\\% \\times 96\\% = 72\\%$) and leaves their national savings at exactly 28% ($100\\% - 72\\% = 28\\%$). By turning the investment slider to exactly 28%, their internal savings perfectly clear with internal outlays ($S = I$). Their net trade surpluses drop to absolute zero.
+        * **The Mechanic:** 1. **Eliminating the 4% Leak:** Elevating the wage share to 75% under a zero welfare deficit means households spend 96% of their disposable earnings. This fixes Country A and B's aggregate domestic consumption at 72% of GDP ($75\\% \\times 96\\% = 72\\%$) and leaves their national savings at exactly 28% ($100\\% - 72\\% = 28\\%$). By turning the investment slider to exactly 28%, their internal savings perfectly clear with internal outlays ($S = I$). Their net trade surpluses drop to absolute zero.
             2. **Starving Foreign Capital Inflows:** Because Country A and B's current accounts are perfectly balanced, Country C receives exactly zero units of excess capital dumping (`debt_pressure_c = 0.0`). The foreign transmission channel into US Treasuries, Equities, and Real Estate completely vaporizes. 
         * **The Reckoning:** With zero external capital forcing credit expansions onto Country C, and zero malinvestment waste creating bad assets in Countries A and B, the system's structural debt engines are turned off. Backed by their strong domestic worker wages, all three nations activate their natural **Amortization and Paydown engines**, completely overtaking historical interest charges. On the chart, Country A and B's lines curve downward into permanent stability, while Country C's debt drops smoothly and **flatlines perfectly along the 0.0% axis**. Global equilibrium is fully restored.
         """)
 
     # =========================================================================
-    # NEW EXTENSION: ADVANCED THEORETICAL ADDENDUMS
+    # ADVANCED THEORETICAL ADDENDUMS
     # =========================================================================
     st.divider()
     st.subheader("🔀 Advanced Theoretical Addendums: The Mechanical Fault Lines")
